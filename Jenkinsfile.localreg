@@ -1,0 +1,66 @@
+pipeline { 
+    agent {
+        node {
+            label 'master'
+        }
+    }
+    options {
+        ansiColor('xterm')
+    }
+    environment { 
+        INTERNAL_REGISTRY = 'lnx1:5000'
+        IMAGE_NAME = 'stocksimportapi'
+        IMAGE_VERSION = ''
+    }
+    stages {
+        stage('Static code analysis') {
+            steps {
+                sh 'staticcheck ./...'
+                sh 'gosec -exclude=G104 -fmt=yaml -out=security_code_analysis.yaml -stdout -verbose=text ./...'
+            }
+        }
+        stage('Dockerfile check') {
+            steps {
+                sh "hadolint Dockerfile --info DL3008 -t warning -f json | tee -a dockerfile_lint.json"
+            }
+        }
+        stage('Build') { 
+            steps { 
+                echo "Running build stage for ${env.IMAGE_NAME}"
+                script {
+                    IMAGE_VERSION = readFile('VERSION').trim()
+                    image = docker.build("${env.INTERNAL_REGISTRY}/${env.IMAGE_NAME}:${IMAGE_VERSION}")
+                    docker.withRegistry("https://${env.INTERNAL_REGISTRY}", 'PrivateDockerCreds') {
+                        image.push()
+                    }
+                }
+                sh "docker sbom ${env.INTERNAL_REGISTRY}/${env.IMAGE_NAME}:${IMAGE_VERSION} --format syft-json -o sbom.json"
+            }
+        }
+        stage('Security analysis') {
+            steps {
+                sh "trivy image ${env.INTERNAL_REGISTRY}/${env.IMAGE_NAME}:${IMAGE_VERSION} -f json -o trivycheck.json"
+            }
+        }
+        stage('Tag Test Image'){
+            steps {
+                echo "Push image for testing"
+                script {
+                    docker.withRegistry("https://${env.INTERNAL_REGISTRY}", 'PrivateDockerCreds') {
+                        image.push("test")
+                    }
+                }
+            }
+        }
+        stage('Deploy Test Infrastructure') {
+            steps {
+                build job: 'stocks-app-test-deploy'
+            }
+        }
+    }
+    post {
+        always {
+            archiveArtifacts artifacts: 'sbom.json, dockerfile_lint.json,security_code_analysis.yaml,trivycheck.json', fingerprint: true
+        }
+    }
+}
