@@ -12,7 +12,7 @@ RUN go build -x -a -tags netgo -installsuffix netgo ./*.go
 
 #---
 
-FROM alpine:3.16.2
+FROM alpine:3.17.2
 
 ENV PORT=8080 \
     MONGODBSERVERNAME=stocksdb \
