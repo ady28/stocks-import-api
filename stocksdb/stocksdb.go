@@ -338,7 +338,7 @@ func NewStock(ca *alphadata.OverviewData, cy *yahoodata.YahooData, dbServer, dbP
 	stock.Name = ca.Name
 	stock.Ticker = ca.Symbol
 	stock.Exchange = ca.Exchange
-	stock.Beta, _ = strconv.ParseFloat(ca.Beta, 64)
+	stock.Beta, _ = strconv.ParseFloat(cy.QuoteSummary.Result[0].DefaultKeyStatistics.Beta.Fmt, 64)
 	stock.Industry = cy.QuoteSummary.Result[0].AssetProfile.Industry
 	stock.Address = cy.QuoteSummary.Result[0].AssetProfile.Address1
 	stock.City = cy.QuoteSummary.Result[0].AssetProfile.City
