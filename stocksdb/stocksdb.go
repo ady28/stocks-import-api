@@ -538,7 +538,7 @@ func UpdateStock(ca *alphadata.OverviewData, cy *yahoodata.YahooData, ticker, db
 
 	currentStock.Name = ca.Name
 	currentStock.Exchange = ca.Exchange
-	currentStock.Beta, _ = strconv.ParseFloat(ca.Beta, 64)
+	currentStock.Beta, _ = strconv.ParseFloat(cy.QuoteSummary.Result[0].DefaultKeyStatistics.Beta.Fmt, 64)
 	currentStock.Industry = cy.QuoteSummary.Result[0].AssetProfile.Industry
 	currentStock.Address = cy.QuoteSummary.Result[0].AssetProfile.Address1
 	currentStock.City = cy.QuoteSummary.Result[0].AssetProfile.City
