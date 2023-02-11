@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"stocks/alphadata"
 	"stocks/stocksdb"
 	"stocks/yahoodata"
 	"strings"
@@ -47,66 +46,43 @@ func importStock(w http.ResponseWriter, r *http.Request) {
 	key := vars["ticker"]
 	key = strings.ToUpper(key)
 
-	var c *alphadata.OverviewData
 	var d *yahoodata.YahooData
-
-	var akey *stocksdb.Key
 	var ykey *stocksdb.Key
 
 	ret := ""
 
 	mongoDBAdminUser, mongoDBAdminUserPassword := getDBCredentials()
 
-	akey = stocksdb.GetKey("alpha", mongoDBServerName, mongoDBServerPort, mongoDBAdminUser, mongoDBAdminUserPassword)
 	ykey = stocksdb.GetKey("yahoo", mongoDBServerName, mongoDBServerPort, mongoDBAdminUser, mongoDBAdminUserPassword)
-	if akey.Key == "" {
+	if ykey.Key == "" {
 		w.Header().Set("Content-Type", "application/json")
-		message := "Error getting API key for Alpha."
+		message := "Error getting API key for Yahoo."
 		json.NewEncoder(w).Encode(&Response{false, message})
 	} else {
-		if ykey.Key == "" {
+		d = yahoodata.NewData(ykey.Key, key)
+		if d == nil {
 			w.Header().Set("Content-Type", "application/json")
-			message := "Error getting API key for Yahoo."
+			message := "Error getting " + key + ". Check Yahoo API."
 			json.NewEncoder(w).Encode(&Response{false, message})
-		}
-	}
-
-	if akey.Key != "" && ykey.Key != "" {
-		c = alphadata.NewOverviewData(akey.Key, key)
-		if c.Note != "" {
+		} else if len(d.QuoteSummary.Result) == 0 {
 			w.Header().Set("Content-Type", "application/json")
-			message := "Error getting " + key + " with AlphaVantage API. " + c.Note
+			message := "Error getting " + key + ". Stock not found."
 			json.NewEncoder(w).Encode(&Response{false, message})
-		} else if c.Symbol == "" {
+		} else if d.QuoteSummary.Result[0].AssetProfile.Country == "" {
 			w.Header().Set("Content-Type", "application/json")
-			message := "Error getting " + key + ". Check Alpha API."
+			message := "Error getting " + key + ". Stock not found."
 			json.NewEncoder(w).Encode(&Response{false, message})
 		} else {
-			d = yahoodata.NewData(ykey.Key, key)
-			if d == nil {
-				w.Header().Set("Content-Type", "application/json")
-				message := "Error getting " + key + ". Check Yahoo API."
-				json.NewEncoder(w).Encode(&Response{false, message})
-			} else if len(d.QuoteSummary.Result) == 0 {
-				w.Header().Set("Content-Type", "application/json")
-				message := "Error getting " + key + ". Stock not found."
-				json.NewEncoder(w).Encode(&Response{false, message})
-			} else if d.QuoteSummary.Result[0].AssetProfile.Country == "" {
-				w.Header().Set("Content-Type", "application/json")
-				message := "Error getting " + key + ". Stock not found."
-				json.NewEncoder(w).Encode(&Response{false, message})
+			if stocksdb.FindStock(key, mongoDBServerName, mongoDBServerPort, mongoDBAdminUser, mongoDBAdminUserPassword) {
+				ret = "Stock " + key + " already exists. Updating relevant data"
+				stocksdb.UpdateStock(d, key, mongoDBServerName, mongoDBServerPort, mongoDBAdminUser, mongoDBAdminUserPassword)
 			} else {
-				if stocksdb.FindStock(key, mongoDBServerName, mongoDBServerPort, mongoDBAdminUser, mongoDBAdminUserPassword) {
-					ret = "Stock " + key + " already exists. Updating relevant data"
-					stocksdb.UpdateStock(c, d, key, mongoDBServerName, mongoDBServerPort, mongoDBAdminUser, mongoDBAdminUserPassword)
-				} else {
-					ret = "Getting and inserting new stock " + key
-					stocksdb.NewStock(c, d, mongoDBServerName, mongoDBServerPort, mongoDBAdminUser, mongoDBAdminUserPassword)
-				}
-
-				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(&Response{true, ret})
+				ret = "Getting and inserting new stock " + key
+				stocksdb.NewStock(d, mongoDBServerName, mongoDBServerPort, mongoDBAdminUser, mongoDBAdminUserPassword)
 			}
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(&Response{true, ret})
 		}
 	}
 }

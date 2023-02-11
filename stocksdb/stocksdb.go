@@ -6,7 +6,6 @@ import (
 	"math"
 	"net/http"
 	"os"
-	"stocks/alphadata"
 	"stocks/yahoodata"
 	"strconv"
 	"time"
@@ -328,7 +327,7 @@ func SetCompetitors(ticker, exchange string) {
 	}
 }
 
-func NewStock(ca *alphadata.OverviewData, cy *yahoodata.YahooData, dbServer, dbPort, dbUser, dbPass string) {
+func NewStock(cy *yahoodata.YahooData, dbServer, dbPort, dbUser, dbPass string) {
 	client, ctx, ctxCancel := MongoDBConnect(dbServer, dbPort, dbUser, dbPass)
 
 	defer client.Disconnect(ctx)
@@ -524,7 +523,7 @@ func GetKey(name, dbServer, dbPort, dbUser, dbPass string) *Key {
 	return key
 }
 
-func UpdateStock(ca *alphadata.OverviewData, cy *yahoodata.YahooData, ticker, dbServer, dbPort, dbUser, dbPass string) {
+func UpdateStock(cy *yahoodata.YahooData, ticker, dbServer, dbPort, dbUser, dbPass string) {
 
 	client, ctx, ctxCancel := MongoDBConnect(dbServer, dbPort, dbUser, dbPass)
 
