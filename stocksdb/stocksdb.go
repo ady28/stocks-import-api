@@ -335,9 +335,9 @@ func NewStock(ca *alphadata.OverviewData, cy *yahoodata.YahooData, dbServer, dbP
 	defer ctxCancel()
 
 	var stock Stock
-	stock.Name = ca.Name
-	stock.Ticker = ca.Symbol
-	stock.Exchange = ca.Exchange
+	stock.Name = cy.QuoteSummary.Result[0].Price.ShortName
+	stock.Ticker = cy.QuoteSummary.Result[0].Price.Symbol
+	stock.Exchange = cy.QuoteSummary.Result[0].Price.ExchangeName
 	stock.Beta, _ = strconv.ParseFloat(cy.QuoteSummary.Result[0].DefaultKeyStatistics.Beta.Fmt, 64)
 	stock.Industry = cy.QuoteSummary.Result[0].AssetProfile.Industry
 	stock.Address = cy.QuoteSummary.Result[0].AssetProfile.Address1
@@ -536,8 +536,8 @@ func UpdateStock(ca *alphadata.OverviewData, cy *yahoodata.YahooData, ticker, db
 		log.Fatal("Stock " + ticker + " should exist but was not found")
 	}
 
-	currentStock.Name = ca.Name
-	currentStock.Exchange = ca.Exchange
+	currentStock.Name = cy.QuoteSummary.Result[0].Price.ShortName
+	currentStock.Exchange = cy.QuoteSummary.Result[0].Price.ExchangeName
 	currentStock.Beta, _ = strconv.ParseFloat(cy.QuoteSummary.Result[0].DefaultKeyStatistics.Beta.Fmt, 64)
 	currentStock.Industry = cy.QuoteSummary.Result[0].AssetProfile.Industry
 	currentStock.Address = cy.QuoteSummary.Result[0].AssetProfile.Address1

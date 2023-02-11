@@ -35,6 +35,7 @@ type yahooDataResultObj struct {
 	IncomeStatementHistoryQuarterly   yahooDataIncomeStmH              `json:"incomeStatementHistoryQuarterly"`
 	CashflowStatementHistoryQuarterly yahooDataCashFlowStmH            `json:"cashflowStatementHistoryQuarterly"`
 	FinancialData                     yahooDataFinancialDataObj        `json:"financialData"`
+	Price                             yahooDataPriceObj                `json:"price"`
 }
 type yahooDataAssetProfileObj struct {
 	Address1            string `json:"address1"`
@@ -725,13 +726,19 @@ type yahooDataFinancialDataObj struct {
 		Raw float64 `json:'raw'`
 	} `json:'ebitdaMargins'`
 	OperatingMargins struct {
-		Fmt string  `json:'fmt'`
-		Raw float64 `json:'raw'`
-	} `json:'operatingMargins'`
+		Fmt string  `json:"fmt"`
+		Raw float64 `json:"raw"`
+	} `json:"operatingMargins"`
 	ProfitMargins struct {
 		Fmt string  `json:"fmt"`
 		Raw float64 `json:"raw"`
 	} `json:"profitMargins"`
+}
+type yahooDataPriceObj struct {
+	ExchangeName string `json:"exchangeName"`
+	Symbol       string `json:"symbol"`
+	ShortName    string `json:"shortName"`
+	LongName     string `json:"longName"`
 }
 
 func NewData(apikey string, ticker string) *YahooData {
