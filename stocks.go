@@ -30,6 +30,7 @@ func main() {
 func handleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.HandleFunc("/v1/import/{ticker}", importStock)
+	myRouter.HandleFunc("/health", health)
 	s := &http.Server{
 		Addr:           ":" + PORT,
 		Handler:        myRouter,
@@ -38,6 +39,11 @@ func handleRequests() {
 		MaxHeaderBytes: 0,
 	}
 	s.ListenAndServe()
+}
+
+func health(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&Response{true, "OK"})
 }
 
 func importStock(w http.ResponseWriter, r *http.Request) {
